@@ -10,6 +10,7 @@ def ID3(examples, default):
   '''
   finalTree = Node()
   if (not examples):
+
     return default
   else:
     sameClassifcation = True
@@ -22,19 +23,20 @@ def ID3(examples, default):
         lastClassification = att.Class
 
     if (sameClassifcation):
-      return mode(examples)
+      return examples[0].Class
     if (allEmpty):
+      print "error: should terminate classification"
       return False
     best = choose_attribute(examples)
     tree = Node()
-    examplesI
-    for val in examples:
-      if examples == val:
 
-    for val in best:
-      
-      subtree = ID3(examples,default,mode(examples)):
-      finalTree.add_branch(val,subtree)
+    for vi in best:
+      examplesI = []
+      for val in examples:
+        if (val[best] && val[best] == vi)
+          examplesI.append(newDict)
+      subtree = ID3(examplesI,mode(examples)):
+      finalTree.add_branch(vi,subtree)
       
   return finalTree
 
