@@ -5,6 +5,8 @@ def testID3AndEvaluate():
   tree = ID3.ID3(data, 0)
   if tree != None:
     ans = ID3.evaluate(tree, dict(a=1, b=0))
+    print "final-ans"
+    print ans
     if ans != 1:
       print "ID3 test failed."
     else:
