@@ -109,6 +109,24 @@ def mode(examples):
   return maxClass
 
 def prune(node, examples):
+  checked = []
+  oldTreeValidation = test(node, examples) #test oldTree
+  #foreach leaf:
+  #   go to parent, put parent in checked
+  #   if parent unchecked: 
+  #      for children of parent:
+  #         find majority value of attribute 
+  #      for children of parent:
+  #         change all to majority value 
+  #
+  #   newTreeValidation = test(node, examples)
+  #   if newTreeValidation > oldTreeValidation:
+  #      oldTreeValidation = newTreeValidation
+  #      remove parent and children, replace with majority value
+  #   else:
+  #      revert tree back to how it was
+  
+  
   '''
   Takes in a trained tree and a validation set of examples.  Prunes nodes in order
   to improve accuracy on the validation data; the precise pruning strategy is up to you.
