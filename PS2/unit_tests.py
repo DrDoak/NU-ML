@@ -31,12 +31,16 @@ def testPruning():
 def testID3AndTest():
   trainData = [dict(a=1, b=0, c=0, Class=1), dict(a=1, b=1, c=0, Class=1), 
   dict(a=0, b=0, c=0, Class=0), dict(a=0, b=1, c=0, Class=1)]
+
   testData = [dict(a=1, b=0, c=1, Class=1), dict(a=1, b=1, c=1, Class=1), 
   dict(a=0, b=0, c=1, Class=0), dict(a=0, b=1, c=1, Class=0)]
+  
   tree = ID3.ID3(trainData, 0)
   fails = 0
   if tree != None:
+    # print "label: " + str(tree.label) + "| children: " + str(tree.children)
     acc = ID3.test(tree, trainData)
+    print "final result: " + str(acc)
     if acc == 1.0:
       print "testing on train data succeeded."
     else:
