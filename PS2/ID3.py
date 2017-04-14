@@ -88,13 +88,13 @@ def choose_attribute(examples,options):
   # print "Choosing Attribute"
   maxAttr = None
   maxGain = 0
-  print "---"
+  # print "---"
   for k,v in options.iteritems():
     if k != "Class":
       testGain = gain(examples,k,options[k])
-      print "attr: " + str(k) + " diff: " + str(testGain - maxGain) + " new: " + str(testGain) + " max: " + str(maxGain) + str(testGain - maxGain)
+      # print "attr: " + str(k) + " diff: " + str(testGain - maxGain) + " new: " + str(testGain) + " max: " + str(maxGain) + str(testGain - maxGain)
       if testGain > maxGain:
-        print "testGain for attr: " + str(k) + " is: " + str(testGain) + " maxis: " + str(maxGain)
+        # print "testGain for attr: " + str(k) + " is: " + str(testGain) + " maxis: " + str(maxGain)
         maxGain = testGain
         maxAttr = k
   # attrAns = []
@@ -106,14 +106,17 @@ def choose_attribute(examples,options):
 def gain(S, A, options):
   ent = entropy(S)
   sumA = 0
+  # print "_-----" + str(len(S)) + " At: " + str(A)
   for v in options:
     Sv = []
     for val in S:
       if (val[A] == v):
         Sv.append(val)
     # print "len1: " + str(len(Sv)) + " len2: " + str(len(S)) + " entSm: " + str(entropy(Sv))
-    sumA += (len(Sv)/len(S)) * entropy(Sv)
+    sumA = sumA + ((len(Sv) * 1.0)/len(S)) * entropy(Sv)
+    # print "lS: " + str(len(Sv)) + " ent: " + str(entropy(Sv)) + " add: " + str((len(Sv) * 1.0)/len(S)) + " sum: " + str(sumA)
   # print "startEnt: " + str(ent) + "sum A: " + str(sumA) + " gain: " + str(ent - sumA)
+
   return ent - sumA
 
 def entropy(examples):
@@ -126,12 +129,12 @@ def entropy(examples):
       countList[att["Class"]] += 1.0
     else:
       countList[att["Class"]] = 1.0
-
   for key,val in countList.iteritems():
     # print "found: " + str(val * 1.0)
     # print "total: " + str(len(examples) * 1.0)
     # print "ratio: " + str((val*1.0) / (len(examples)*1.0))
     ent += (-val/len(examples)) * math.log((val/len(examples)),2)
+    # print str(key) + " l: " + str(val) + " e: " + str(ent)
   # Entropy = - p(a)*log(p(a)) - p(b)*log(p(b))
 
   return ent
