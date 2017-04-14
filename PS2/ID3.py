@@ -66,11 +66,11 @@ def ID3Helper(examples,default,posAns, parent):
   return finalTree
 
 
-def propagate_ClassVal(node, classVal):
-  if classVal in node.classVals.keys():
-    node.classVals[classVal] += 1
+def propagate_ClassVal(node, cv):
+  if cv in node.classVals.keys():
+    node.classVals[cv] += 1
   else:
-    node.classVals[classVal] = 1
+    node.classVals[cv] = 1
   if (node.parent != None):
     propagate_ClassVal(node.parent, classVal)
 
