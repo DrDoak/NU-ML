@@ -1,5 +1,5 @@
 from node import Node
-import math
+import math,copy
 
 def ID3(examples, default):
   '''
@@ -124,10 +124,13 @@ def mode(examples):
 
 def getLeaves(node):
   listLeaves = []
+  print "getting leaves of " + str(node)
   if node.isLeaf:
     return [node]
   else:
-    for subnode in node.children:
+    print "children: " + str(node.children)
+    for key, subnode in node.children.iteritems():
+      print "getting subnode at " + str(subnode)
       listLeaves += getLeaves(subnode)
   return listLeaves
 
@@ -135,23 +138,25 @@ def getMajorityClass():
   return None
 
 def prune(oldTree, examples):
+  print oldTree
   listLeaves = getLeaves(oldTree)
   checked = []
 
   while(len(listLeaves) > 0):
     leaf = listLeaves[0]
-    newTree,newLeaf = pruneHelper(deepcopy(oldTree),leaf,checked)
+    newTree,newLeaf = pruneHelper(copy.deepcopy(oldTree),leaf,checked)
     listLeaves.pop(0)
     if test(newTree,examples) > test(oldTree, examples): 
       oldTree = newTree
       listLeaves.insert(newLeaf)
   return oldTree
 
-def pruneHelper(node,leaf):
+def pruneHelper(node,leaf,checked):
   '''
   Takes in a trained tree and a validation set of examples.  Prunes nodes in order
   to improve accuracy on the validation data; the precise pruning strategy is up to you.
   '''
+  print "Parent is: " + str(leaf.parent)
   if (not leaf.parent in checked):
     totalMajority = {}
     for child in leaf.parent.children:
