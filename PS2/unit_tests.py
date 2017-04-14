@@ -21,6 +21,7 @@ def testPruning():
   ID3.prune(tree, validationData)
   if tree != None:
     ans = ID3.evaluate(tree, dict(a=0, b=0))
+    print "FInal answer: " + str(ans)
     if ans != 0:
       print "pruning test failed."
     else:
@@ -69,7 +70,7 @@ def testPruningOnHouseData(inFile):
     train = data[:len(data)/2]
     valid = data[len(data)/2:3*len(data)/4]
     test = data[3*len(data)/4:]
-  
+    print "========================"
     tree = ID3.ID3(train, 'democrat')
     acc = ID3.test(tree, train)
     print "training accuracy: ",acc
@@ -77,6 +78,7 @@ def testPruningOnHouseData(inFile):
     print "validation accuracy: ",acc
     acc = ID3.test(tree, test)
     print "test accuracy: ",acc
+    print "-------------------------"
   
     ID3.prune(tree, valid)
     acc = ID3.test(tree, train)
@@ -91,6 +93,7 @@ def testPruningOnHouseData(inFile):
     print "no pruning test accuracy: ",acc
     withoutPruning.append(acc)
   print withPruning
+  print "---"
   print withoutPruning
   print "average with pruning",sum(withPruning)/len(withPruning)," without: ",sum(withoutPruning)/len(withoutPruning)
   

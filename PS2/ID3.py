@@ -8,13 +8,17 @@ def ID3(examples, default):
   and the target class variable is a special attribute with the name "Class".
   Any missing attributes are denoted with a value of "?"
   '''
+  return ID3Helper(examples,default,None)
+def ID3Helper(examples,default,parent):
   # print "+++++++ID3 start"
   # print examples
   finalTree = Node()
+  finalTree.parent = parent
   if (not examples):
     # print "empty, returning default: " + str(default)
     finalTree.value = default
     finalTree.isLeaf = True
+    propagate_ClassVal(finalTree,finalTree.value)
     return finalTree
   else:
     sameClassification = True
@@ -32,9 +36,7 @@ def ID3(examples, default):
     if (sameClassification):
       finalTree.value = lastClassification
       finalTree.isLeaf = True
-      # print "-----"
-      # print examples
-      # print "returning last class: " + str(lastClassification)
+      propagate_ClassVal(finalTree,finalTree.value)
       return finalTree
     if (allEmpty):
       finalTree.value = default
@@ -50,10 +52,29 @@ def ID3(examples, default):
         if (val[bestAttr] == vi):
           # print "appending a new thing"
           examplesI.append(val)
-      subtree = ID3(examplesI,mode(examples))
+      subtree = ID3Helper(examplesI,mode(examples),finalTree)
       #finalTree.add_branch(vi,subtree)
       finalTree.children[vi] = subtree
   return finalTree
+
+
+def propagate_ClassVal(node, classVal):
+  if "Class" in node.classVals.keys():
+    node.classVals[classVal] += 1
+  else:
+    node.classVals[classVal] = 1
+  if (node.parent != None):
+    propagate_ClassVal(node.parent, classVal)
+
+def valueFinder(examples, attribute):
+  '''
+  Takes array of dictionaries, and returns all possible values for a specific attribute
+  '''
+  possibleValues = []
+  for ex in examples:
+    if ex[attribute] not in possibleValues:
+      possibleValues.append(ex[attribute])
+  return possibleValues
 
 def choose_attribute(examples):
   # print "Choosing Attribute"
@@ -62,7 +83,7 @@ def choose_attribute(examples):
   maxGain = 0
   for k,v in attrs.iteritems():
     if k != "Class":
-      testGain = gain(examples,k,[0,1])
+      testGain = gain(examples,k,valueFinder(examples,k))
       # print "testGain for attr: " + str(k) + " is: " + str(testGain) + " maxis: " + str(maxGain)
       if testGain > maxGain:
         maxGain = testGain
@@ -124,13 +145,10 @@ def mode(examples):
 
 def getLeaves(node):
   listLeaves = []
-  print "getting leaves of " + str(node)
   if node.isLeaf:
     return [node]
   else:
-    print "children: " + str(node.children)
     for key, subnode in node.children.iteritems():
-      print "getting subnode at " + str(subnode)
       listLeaves += getLeaves(subnode)
   return listLeaves
 
@@ -138,17 +156,19 @@ def getMajorityClass():
   return None
 
 def prune(oldTree, examples):
-  print oldTree
+  # print oldTree
   listLeaves = getLeaves(oldTree)
   checked = []
-
+  # print "Initial Accuracy: " + str(test(oldTree, examples))
   while(len(listLeaves) > 0):
     leaf = listLeaves[0]
     newTree,newLeaf = pruneHelper(copy.deepcopy(oldTree),leaf,checked)
     listLeaves.pop(0)
+    # print "Old Accuracy: " + str(test(oldTree, examples))
+    # print "New Accuracy: " + str(test(newTree,examples))
     if test(newTree,examples) > test(oldTree, examples): 
       oldTree = newTree
-      listLeaves.insert(newLeaf)
+      listLeaves.append(newLeaf)
   return oldTree
 
 def pruneHelper(node,leaf,checked):
@@ -156,11 +176,11 @@ def pruneHelper(node,leaf,checked):
   Takes in a trained tree and a validation set of examples.  Prunes nodes in order
   to improve accuracy on the validation data; the precise pruning strategy is up to you.
   '''
-  print "Parent is: " + str(leaf.parent)
-  if (not leaf.parent in checked):
+  if (leaf.parent != None and not leaf.parent in checked):
     totalMajority = {}
-    for child in leaf.parent.children:
+    for key, child in leaf.parent.children.iteritems():
       for className,number in child.classVals.iteritems():
+        # print "ClassName: " + str(className) + " ClassNum: " + str(number)
         if not className in totalMajority.keys():
           totalMajority[className] = number
         else:
@@ -169,13 +189,16 @@ def pruneHelper(node,leaf,checked):
     majorityClass = None
     maxNum = 0
     totalVal = 0;
+    # print "-----------"
     for className, classNum in totalMajority.iteritems():
       totalVal = totalVal + classNum
+      # print "ClassName: " + str(className) + " ClassNum: " + str(classNum)
       if classNum > maxNum:
         maxNum = classNum 
         majorityClass = className
-
+    # print "Majority attribute is :" + str(majorityClass)
     leaf.parent.value = majorityClass
+    leaf.parent.isLeaf = True
     leaf.parent.classVals = {majorityClass: totalVal}
   checked.append(leaf.parent)
 
@@ -189,7 +212,7 @@ def test(node, examples):
   numCorrect = 0
   for testCase in examples:
     testAnswer = evaluate(node,testCase)
-    print "evaluatedAns: " + str(testAnswer) + "Real Answer: " + str(testCase["Class"])
+    # print "evaluatedAns: " + str(testAnswer) + "Real Answer: " + str(testCase["Class"])
     if testAnswer == testCase["Class"]:
       numCorrect = numCorrect + 1
   return (numCorrect * 1.0)/len(examples)
@@ -200,7 +223,7 @@ def evaluate(node, example):
   Takes in a tree and one example.  Returns the Class value that the tree
   assigns to the example.
   '''
-  if (node.children):
+  if (not node.isLeaf):
     for k,v in node.children.iteritems():
       #print str(k) + " : " + str(v)
       if (example[node.label] == k):
