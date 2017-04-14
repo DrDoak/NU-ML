@@ -6,6 +6,7 @@ class Node:
         self.children = {} 
         self.classVals = {}
         self.isLeaf = False
+        self.pruned = False
 	# you may want to add additional fields here...
 
 	def add_branch(self,label, subtree):

@@ -1,4 +1,4 @@
-import ID3, parse, random
+import ID3, parse, random, copy
 
 def testID3AndEvaluate():
   data = [dict(a=1, b=0, Class=1), dict(a=1, b=1, Class=1)]
@@ -19,6 +19,7 @@ def testPruning():
   validationData = [dict(a=1, b=0, Class=1), dict(a=1, b=1, Class=1), dict(a=0, b=0, Class=0), dict(a=0, b=0, Class=0)]
   tree = ID3.ID3(data, 0)
   ID3.prune(tree, validationData)
+  print tree.children
   if tree != None:
     ans = ID3.evaluate(tree, dict(a=0, b=0))
     print "FInal answer: " + str(ans)
@@ -65,32 +66,41 @@ def testPruningOnHouseData(inFile):
   withPruning = []
   withoutPruning = []
   data = parse.parse(inFile)
+  tSize = 60
   for i in range(100):
     random.shuffle(data)
+    # train = copy.deepcopy(data[0:tSize])
+    # random.shuffle(data)
+    # valid = copy.deepcopy(data[0:tSize])
+    # random.shuffle(data)
+    # test = copy.deepcopy(data[0:tSize])
+
     train = data[:len(data)/2]
     valid = data[len(data)/2:3*len(data)/4]
     test = data[3*len(data)/4:]
-    print "========================"
+
     tree = ID3.ID3(train, 'democrat')
     acc = ID3.test(tree, train)
-    print "training accuracy: ",acc
+    if acc < 1.0:
+      print "training accuracy: ",acc
     acc = ID3.test(tree, valid)
     print "validation accuracy: ",acc
     acc = ID3.test(tree, test)
     print "test accuracy: ",acc
-    print "-------------------------"
   
     ID3.prune(tree, valid)
     acc = ID3.test(tree, train)
-    print "pruned tree train accuracy: ",acc
+    # print "pruned tree train accuracy: ",acc
     acc = ID3.test(tree, valid)
-    print "pruned tree validation accuracy: ",acc
+    # print "pruned tree validation accuracy: ",acc
     acc = ID3.test(tree, test)
-    print "pruned tree test accuracy: ",acc
+    # print "pruned tree test accuracy: ",acc
     withPruning.append(acc)
     tree = ID3.ID3(train+valid, 'democrat')
+
+    # tree = ID3.ID3(train, 'democrat')
     acc = ID3.test(tree, test)
-    print "no pruning test accuracy: ",acc
+    # print "no pruning test accuracy: ",acc
     withoutPruning.append(acc)
   print withPruning
   print "---"

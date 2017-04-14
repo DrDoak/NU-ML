@@ -8,8 +8,12 @@ def ID3(examples, default):
   and the target class variable is a special attribute with the name "Class".
   Any missing attributes are denoted with a value of "?"
   '''
-  return ID3Helper(examples,default,None)
-def ID3Helper(examples,default,parent):
+  posAns = {}
+  for k in examples[0]:
+    posAns[k] = valueFinder(examples,k)
+  return ID3Helper(examples,default,posAns, None)
+
+def ID3Helper(examples,default,posAns, parent):
   # print "+++++++ID3 start"
   # print examples
   finalTree = Node()
@@ -28,8 +32,6 @@ def ID3Helper(examples,default,parent):
       allEmpty = False
       # print "bool: " + str(lastClassification != None) + " bool2: " + str(att["Class"] != lastClassification)
       if (lastClassification != None) and att["Class"] != lastClassification:
-        # print "l: " + str(lastClassification) + "| n: " + str(att["Class"])
-        # print "values are different, no longer sameClassification"
         sameClassification = False
       else:
         lastClassification = att["Class"]
@@ -38,13 +40,16 @@ def ID3Helper(examples,default,parent):
       finalTree.isLeaf = True
       propagate_ClassVal(finalTree,finalTree.value)
       return finalTree
+
     if (allEmpty):
       finalTree.value = default
       return finalTree
-    bestAttr,potentialAnswers = choose_attribute(examples)
+
+    bestAttr = choose_attribute(examples,posAns)
     # print "split on label: " + str(bestAttr)
     finalTree.label = bestAttr
-    for vi in potentialAnswers:
+
+    for vi in posAns[finalTree.label]:
       # print "grade: " + str(vi)
       examplesI = []
       for val in examples:
@@ -52,14 +57,17 @@ def ID3Helper(examples,default,parent):
         if (val[bestAttr] == vi):
           # print "appending a new thing"
           examplesI.append(val)
-      subtree = ID3Helper(examplesI,mode(examples),finalTree)
+      potMode = default
+      if (mode(examples) != None):
+        potMode = mode(examples)
+      subtree = ID3Helper(examplesI,potMode,posAns,finalTree)
       #finalTree.add_branch(vi,subtree)
       finalTree.children[vi] = subtree
   return finalTree
 
 
 def propagate_ClassVal(node, classVal):
-  if "Class" in node.classVals.keys():
+  if classVal in node.classVals.keys():
     node.classVals[classVal] += 1
   else:
     node.classVals[classVal] = 1
@@ -76,23 +84,24 @@ def valueFinder(examples, attribute):
       possibleValues.append(ex[attribute])
   return possibleValues
 
-def choose_attribute(examples):
+def choose_attribute(examples,options):
   # print "Choosing Attribute"
-  attrs = examples[0]
   maxAttr = None
   maxGain = 0
-  for k,v in attrs.iteritems():
+  print "---"
+  for k,v in options.iteritems():
     if k != "Class":
-      testGain = gain(examples,k,valueFinder(examples,k))
-      # print "testGain for attr: " + str(k) + " is: " + str(testGain) + " maxis: " + str(maxGain)
+      testGain = gain(examples,k,options[k])
+      print "attr: " + str(k) + " diff: " + str(testGain - maxGain) + " new: " + str(testGain) + " max: " + str(maxGain) + str(testGain - maxGain)
       if testGain > maxGain:
+        print "testGain for attr: " + str(k) + " is: " + str(testGain) + " maxis: " + str(maxGain)
         maxGain = testGain
         maxAttr = k
-  attrAns = []
-  for v in examples:
-    if (maxAttr != None) and not v[maxAttr] in attrAns:
-      attrAns.append(v[maxAttr])
-  return maxAttr, attrAns
+  # attrAns = []
+  # for v in examples:
+  #   if (maxAttr != None) and not v[maxAttr] in attrAns:
+  #     attrAns.append(v[maxAttr])
+  return maxAttr
 
 def gain(S, A, options):
   ent = entropy(S)
@@ -104,7 +113,7 @@ def gain(S, A, options):
         Sv.append(val)
     # print "len1: " + str(len(Sv)) + " len2: " + str(len(S)) + " entSm: " + str(entropy(Sv))
     sumA += (len(Sv)/len(S)) * entropy(Sv)
-  # print "startEnt: " + str(ent) + "sum A: " + str(sumA)
+  # print "startEnt: " + str(ent) + "sum A: " + str(sumA) + " gain: " + str(ent - sumA)
   return ent - sumA
 
 def entropy(examples):
@@ -113,16 +122,18 @@ def entropy(examples):
   for att in examples:
     # print "___" + str(att)
     if att["Class"] in countList.keys():
-      countList[att["Class"]] += 1
+      # print att["Class"]
+      countList[att["Class"]] += 1.0
     else:
-      countList[att["Class"]] = 1
+      countList[att["Class"]] = 1.0
+
   for key,val in countList.iteritems():
-    val = val * 1.0    
-    # print val * 1.0
-    # print len(examples) * 1.0
-    # print str((val*1.0) / (len(examples)*1.0))
+    # print "found: " + str(val * 1.0)
+    # print "total: " + str(len(examples) * 1.0)
+    # print "ratio: " + str((val*1.0) / (len(examples)*1.0))
     ent += (-val/len(examples)) * math.log((val/len(examples)),2)
   # Entropy = - p(a)*log(p(a)) - p(b)*log(p(b))
+
   return ent
 
 def mode(examples):
@@ -145,6 +156,8 @@ def mode(examples):
 
 def getLeaves(node):
   listLeaves = []
+  if node.pruned:
+    return []
   if node.isLeaf:
     return [node]
   else:
@@ -152,31 +165,54 @@ def getLeaves(node):
       listLeaves += getLeaves(subnode)
   return listLeaves
 
-def getMajorityClass():
-  return None
-
 def prune(oldTree, examples):
-  # print oldTree
-  listLeaves = getLeaves(oldTree)
+  oldTree.children = pruneH(oldTree,examples).children
+
+def pruneH(oldTree, examples):
   checked = []
-  # print "Initial Accuracy: " + str(test(oldTree, examples))
-  while(len(listLeaves) > 0):
+  previousBest = test(oldTree, examples)
+  # print "Now pruning: Initial Accuracy: " + str(previousBest) 
+  testTree = copyTree(oldTree,None)
+  listLeaves = getLeaves(testTree)
+  while(len(listLeaves) > 1):
     leaf = listLeaves[0]
-    newTree,newLeaf = pruneHelper(copy.deepcopy(oldTree),leaf,checked)
+    newTree,newLeaf = pruneHelper(testTree,leaf,checked)
     listLeaves.pop(0)
-    # print "Old Accuracy: " + str(test(oldTree, examples))
-    # print "New Accuracy: " + str(test(newTree,examples))
-    if test(newTree,examples) > test(oldTree, examples): 
+    newScore = test(newTree,examples)
+    # print "newScore: " + str(newScore)
+
+    if newScore > previousBest: 
       oldTree = newTree
-      listLeaves.append(newLeaf)
+      # print "PRUNE: New accuracy is: " + str(newScore) + " Over old: " + str(previousBest) + " diff: "+  str(newScore - previousBest)
+      previousBest = newScore
+    otherList = getLeaves(oldTree)
+    otherList[0].pruned = True
+    testTree = copyTree(oldTree,None)
+    listLeaves = getLeaves(testTree)
+    # print "len: " + str(len(listLeaves))
+
+
   return oldTree
+
+def copyTree(oNode,parent):
+  newNode = Node()
+  newNode.label = oNode.label
+  newNode.parent = parent
+  newNode.value = oNode.value
+  newNode.children = {}
+  newNode.pruned = oNode.pruned
+  for k,c in oNode.children.iteritems():
+   newNode.children[k] = copyTree(c,newNode)
+  newNode.classVals = copy.deepcopy(oNode.classVals)
+  newNode.isLeaf = oNode.isLeaf
+  return newNode
 
 def pruneHelper(node,leaf,checked):
   '''
   Takes in a trained tree and a validation set of examples.  Prunes nodes in order
   to improve accuracy on the validation data; the precise pruning strategy is up to you.
   '''
-  if (leaf.parent != None and not leaf.parent in checked):
+  if (leaf.parent != None and not leaf.parent.label in checked):
     totalMajority = {}
     for key, child in leaf.parent.children.iteritems():
       for className,number in child.classVals.iteritems():
@@ -198,9 +234,10 @@ def pruneHelper(node,leaf,checked):
         majorityClass = className
     # print "Majority attribute is :" + str(majorityClass)
     leaf.parent.value = majorityClass
+    leaf.pruned = True
     leaf.parent.isLeaf = True
     leaf.parent.classVals = {majorityClass: totalVal}
-  checked.append(leaf.parent)
+  checked.append(leaf.parent.label)
 
   return node ,leaf.parent  
 
@@ -212,9 +249,13 @@ def test(node, examples):
   numCorrect = 0
   for testCase in examples:
     testAnswer = evaluate(node,testCase)
-    # print "evaluatedAns: " + str(testAnswer) + "Real Answer: " + str(testCase["Class"])
+
     if testAnswer == testCase["Class"]:
       numCorrect = numCorrect + 1
+    else:
+      pass
+      # print "test case: " + str(testCase)
+      # print "evaluatedAns: " + str(testAnswer) + " Real Answer: " + str(testCase["Class"])
   return (numCorrect * 1.0)/len(examples)
 
 
@@ -225,7 +266,6 @@ def evaluate(node, example):
   '''
   if (not node.isLeaf):
     for k,v in node.children.iteritems():
-      #print str(k) + " : " + str(v)
       if (example[node.label] == k):
         return evaluate(v,example)
   else:
