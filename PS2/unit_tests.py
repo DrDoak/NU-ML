@@ -63,11 +63,11 @@ def testID3AndTest():
 
 # inFile - string location of the house data file
 def testPruningOnHouseData(inFile):
-  withPruning = []
-  withoutPruning = []
   data = parse.parse(inFile)
   
-  for tSize in range[150, 200, 250, 300]:
+  for tSize in [150, 200, 250, 300]:
+    withPruning = []
+    withoutPruning = []
     for i in range(100):
       random.shuffle(data)
       train = copy.deepcopy(data[0:tSize])
@@ -106,5 +106,7 @@ def testPruningOnHouseData(inFile):
       """print withPruning 
       print "---" 
       print withoutPruning"""
-      print "average with pruning",sum(withPruning)/len(withPruning)," without: ",sum(withoutPruning)/len(withoutPruning)
+      print str(len(withPruning))
+      print str(len(withoutPruning))
+      print "average with pruning" + str(sum(withPruning)/len(withPruning)) + " without: " + str(sum(withoutPruning)/len(withoutPruning))
   

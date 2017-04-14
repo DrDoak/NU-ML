@@ -72,7 +72,7 @@ def propagate_ClassVal(node, cv):
   else:
     node.classVals[cv] = 1
   if (node.parent != None):
-    propagate_ClassVal(node.parent, classVal)
+    propagate_ClassVal(node.parent, cv)
 
 def valueFinder(examples, attribute):
   '''
